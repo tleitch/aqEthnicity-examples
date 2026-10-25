@@ -1,10 +1,10 @@
-# aqethnicity-examples
+# aqEthnicity examples
 
 Runnable examples for the **aequum REST API**: race and ethnicity *probabilities* for population-level analysis, from a surname, a first name and an address. Everything here uses **made-up people and public landmark or business addresses**; there is no real personal data in this repository.
 
 | Notebook | Where |
 |---|---|
-| `notebooks/quickstart_colab.ipynb` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tleitch/aqethnicity-examples/blob/main/notebooks/quickstart_colab.ipynb) (reads your key from Colab Secrets) |
+| `notebooks/quickstart_colab.ipynb` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tleitch/aqEthnicity-examples/blob/main/notebooks/quickstart_colab.ipynb) (reads your key from Colab Secrets) |
 | `notebooks/quickstart_jupyter.ipynb` | the same content for a local Jupyter (reads your key from an environment variable) |
 
 ## What the API offers

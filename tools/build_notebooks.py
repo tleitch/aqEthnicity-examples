@@ -2,7 +2,7 @@
 badge and the cell that reads the key). Run: python tools/build_notebooks.py   (outputs are always empty)."""
 import json, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPO = "tleitch/aqethnicity-examples"
+REPO = "tleitch/aqEthnicity-examples"
 
 def md(t): return {"cell_type": "markdown", "metadata": {}, "source": t.strip("\n").splitlines(True)}
 def code(t): return {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [], "source": t.strip("\n").splitlines(True)}
