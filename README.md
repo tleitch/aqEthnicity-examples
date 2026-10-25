@@ -55,4 +55,4 @@ jupyter lab notebooks/quickstart_jupyter.ipynb
 
 ## Licence and terms
 
-The example code in this repository is under the [MIT licence](LICENSE). Use of the hosted API, and of STRATA outputs, is subject to the free-tier terms (see [NOTICE](NOTICE)). *aequumAI LLC. Contact: terry@aequum.ai*
+The example code in this repository is under the [Apache License 2.0](LICENSE). Use of the hosted API, and of STRATA outputs, is subject to the free-tier terms (see [NOTICE](NOTICE)). *aequumAI LLC. Contact: terry@aequum.ai*

@@ -1,9 +1,9 @@
 aqEthnicity examples
 Copyright (c) 2026 aequumAI LLC
 
-The example code in this repository is licensed under the MIT licence (see LICENSE).
+The example code in this repository is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-The hosted aequum API and its outputs are NOT covered by that licence. aequum STRATA outputs are subject to the
+The hosted aequum API, its outputs, models and data tables are NOT covered by that licence. aequum STRATA outputs are subject to the
 free-tier terms; the terms are provided with your key (and will be linked here when registration is live). Outputs are
 statistical estimates for aggregate, population-level analysis, not statements about any individual, and must not be
 used for decisions about individuals.
