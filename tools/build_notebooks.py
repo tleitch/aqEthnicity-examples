@@ -16,23 +16,41 @@ What you will do: check the service, send a small file to **BISG**, **BIFSG** an
 Outputs are **estimated probabilities, not a statement about any individual's race**. Use them for aggregate, population-level analysis only. STRATA is free up to 10,000 records a day with a registered key (see the README for how to get one)."""
 
 KEY_COLAB = """# The API key comes from Colab Secrets, never from a cell.
-# Left sidebar -> key icon -> add a secret named AEQUUM_API_KEY -> switch "Notebook access" on.
+# Left sidebar -> key icon -> "Add new secret" named AEQUUM_API_KEY -> paste your key -> switch "Notebook access" on.
 from google.colab import userdata
-KEY = userdata.get("AEQUUM_API_KEY")
+try:
+    KEY = userdata.get("AEQUUM_API_KEY")
+except userdata.SecretNotFoundError:
+    raise Stop("there is no Colab secret named AEQUUM_API_KEY. Click the key icon in the left sidebar, "
+               "choose 'Add new secret', name it AEQUUM_API_KEY (exactly), paste your key as the value, "
+               "switch 'Notebook access' on, then choose Runtime > Run all. " + KEY_HELP)
+except userdata.NotebookAccessError:
+    raise Stop("the secret AEQUUM_API_KEY exists but this notebook can't read it. Click the key icon in the "
+               "left sidebar and switch 'Notebook access' on for AEQUUM_API_KEY, then choose Runtime > Run all.")
+KEY = (KEY or "").strip()
+if not KEY:
+    raise Stop("the secret AEQUUM_API_KEY is empty. Paste your key as its value, then choose Runtime > Run all. " + KEY_HELP)
 print("API key loaded from Colab Secrets (not shown)")"""
 
 KEY_JUPYTER = """# The API key comes from an environment variable, never from a cell.
 # Set it in the shell that starts Jupyter, e.g.  export AEQUUM_API_KEY=...   (see the README)
-KEY = os.environ.get("AEQUUM_API_KEY")
+KEY = (os.environ.get("AEQUUM_API_KEY") or "").strip()
 if not KEY:
-    raise RuntimeError("Set the AEQUUM_API_KEY environment variable before starting Jupyter (see the README).")
+    raise Stop("the AEQUUM_API_KEY environment variable isn't set. Quit Jupyter, run  export AEQUUM_API_KEY=your-key  "
+               "in the same terminal, start Jupyter again from that terminal, and re-run. " + KEY_HELP)
 print("API key loaded from the environment (not shown)")"""
 
 SETUP = """import os, time, random
 import requests
 import pandas as pd
 
-BASE = os.environ.get("AEQUUM_BASE_URL", "https://api.aequum.ai")"""
+BASE = os.environ.get("AEQUUM_BASE_URL", "https://api.aequum.ai")
+KEY_HELP = "No key yet? Email terry@aequum.ai for a free one (see the README)."
+
+class Stop(Exception):
+    \"\"\"Stops the notebook with a short, plain message instead of a long traceback.\"\"\"
+    def _render_traceback_(self):
+        return ["", "STOPPED: " + str(self), ""]"""
 
 HELPER = """HEADERS = {"Authorization": f"Bearer {KEY}"}          # the key is only ever used here; it is never printed
 
@@ -44,8 +62,14 @@ def post(path, records, options=None, retries=8):
         if r.status_code != 503:
             break
         time.sleep(30)
+    if r.status_code == 401:
+        raise Stop("the API didn't accept your key (HTTP 401). Check it was pasted in full, with no extra spaces. " + KEY_HELP)
+    if r.status_code == 429:
+        raise Stop("you've reached today's free limit (HTTP 429). It resets tomorrow; email terry@aequum.ai if you need more.")
+    if r.status_code == 422:
+        raise Stop(f"the API couldn't read the input (HTTP 422): {r.text[:300]}")
     if not r.ok:
-        raise RuntimeError(f"{path} -> HTTP {r.status_code}: {r.text[:300]}")
+        raise Stop(f"{path} answered HTTP {r.status_code}: {r.text[:300]}")
     return r.json()
 
 # 1. Is the service up? (no key needed)
