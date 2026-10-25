@@ -1,0 +1,111 @@
+---
+title: "aqEthnicity quickstart (R): STRATA, BISG and BIFSG on made-up data"
+format: html
+execute:
+  eval: true
+  warning: false
+---
+
+*Pre-release.* Needs the aqEthnicity R package (not on CRAN yet) and an API key in the `AEQUUM_API_KEY` environment variable, or a hidden prompt when run interactively. **Every person here is invented** and every address is a public landmark or business address, so no accuracy figure is computed. Outputs are estimates for groups, not statements about any individual's race.
+
+## Install and key
+
+```{r}
+#| eval: false
+# PRE-RELEASE: install the development version from GitHub (the repository is created at release time)
+install.packages(c("remotes", "askpass"))
+remotes::install_github("tleitch/aqEthnicity")
+```
+
+```{r}
+library(aqEthnicity)
+if (!nzchar(Sys.getenv("AEQUUM_API_KEY")) && interactive()) aq_set_key()   # hidden prompt; never printed or logged
+str(aq_health())
+```
+
+## 1. A made-up file: 300 invented people at public landmark and business addresses
+Names are random combinations from short lists; the addresses are well-known public places (stadiums, towers, a hotel, a museum). No real person is represented.
+
+```{r}
+set.seed(2026)
+first <- c("MARIA", "WEI", "JAMES", "AISHA", "CARLOS", "PRIYA", "DAVID", "LATOYA", "MIGUEL", "SARAH", "ANDRE", "MEI", "JOHN", "FATIMA", "LUIS", "KEISHA", "ANH", "TOMAS", "NIA", "HIRO",
+           "EMILY", "MICHAEL", "JESSICA", "ROBERT", "ASHLEY", "WILLIAM", "AMANDA", "THOMAS", "KAREN", "STEVEN")
+last <- c("GARCIA", "CHEN", "SMITH", "OKAFOR", "RODRIGUEZ", "PATEL", "JOHNSON", "WASHINGTON", "MARTINEZ", "NGUYEN", "BROWN", "KIM", "WILLIAMS", "HERNANDEZ", "LEE", "JACKSON", "LOPEZ", "SINGH", "DAVIS", "TRAN",
+          "MILLER", "ANDERSON", "TAYLOR", "MOORE", "CLARK", "WALKER", "WRIGHT", "SCOTT", "BAKER", "NELSON")
+places <- data.frame(   # public landmarks and businesses
+  address = c("233 S Wacker Dr", "20 W 34th St", "400 Broad St", "300 Alamo Plaza", "600 Biscayne Blvd", "225 Baker St NW",
+              "4 S Market St", "401 E Jefferson St", "409 Blackwell St", "2000 Brush St", "1 Infinite Loop", "1600 Pennsylvania Ave NW"),
+  city = c("Chicago", "New York", "Seattle", "San Antonio", "Miami", "Atlanta", "Boston", "Phoenix", "Durham", "Detroit", "Cupertino", "Washington"),
+  state = c("IL", "NY", "WA", "TX", "FL", "GA", "MA", "AZ", "NC", "MI", "CA", "DC"),
+  zip5 = c("60606", "10001", "98109", "78205", "33132", "30313", "02109", "85004", "27701", "48226", "95014", "20500"),
+  stringsAsFactors = FALSE)
+pick <- places[sample(nrow(places), 300, replace = TRUE), ]
+df <- data.frame(customer_id = sprintf("S%04d", 0:299), first_name = sample(first, 300, replace = TRUE),
+                 last_name = sample(last, 300, replace = TRUE), pick, stringsAsFactors = FALSE, row.names = NULL)
+head(df)
+```
+
+## Lookup level
+
+```{r}
+geo <- geocode(places$address, places$city, places$state, places$zip5)
+cbind(places[c("address", "city")], geo[c("lookup_level", "lookup_conf")])
+```
+
+## STRATA
+
+```{r}
+res <- strata(df$first_name, df$last_name, address = df$address, city = df$city, state = df$state, zip5 = df$zip5,
+               passthrough = list(customer_id = df$customer_id))
+stopifnot(identical(res$customer_id, df$customer_id))      # answers come back in input order
+head(res[c("customer_id", "p_white", "p_black", "p_hispanic", "p_asian", "p_other", "dominant_race", "iu", "lookup_level")])
+```
+
+```{r}
+p <- c("p_white", "p_black", "p_hispanic", "p_asian", "p_other")
+cat("probabilities sum to 1 on every row:", all(abs(rowSums(res[p]) - 1) < 1e-3), "\n")
+print(table(res$lookup_level))
+print(round(tapply(res$iu, res$lookup_level, mean), 3))     # higher = less certain
+```
+
+## 4. A wru-style wrapper: your data frame back, with probability columns
+`predict_race_aq()` returns your data frame with `pred.whi`, `pred.bla`, `pred.his`, `pred.asi`, `pred.oth` added (the column names the `wru` package uses), plus `pred.iu` and `pred.level` for STRATA. `bisg()` and `bifsg()` are available too.
+
+```{r}
+names(df)[2:3] <- c("first", "surname")                 # the wrapper's default column names
+out <- predict_race_aq(df, address = "address", city = "city", state = "state", zip = "zip5")
+head(out[c("customer_id", "pred.whi", "pred.bla", "pred.his", "pred.asi", "pred.oth", "pred.iu", "pred.level")])
+```
+
+```{r}
+bif <- predict_race_aq(df, zip = "zip5", model = "bifsg")     # BIFSG: first name + surname + ZIP; four classes, so pred.oth is NA
+cat("rows with a BIFSG answer:", sum(!is.na(bif$pred.whi)), "of", nrow(bif), "\n")
+```
+
+## 5. An aggregate example: describe a group with expected counts, not labels
+The probabilities are meant to be **added up**. For a group of people the *expected count* of a class is the sum of its probabilities; counting each person's single top class throws information away and is biased towards the biggest class. Everything below is about **groups**, not individuals, and the data are invented, so the numbers only show the mechanics.
+
+```{r}
+expected <- colSums(res[p])
+data.frame(class = sub("p_", "", p), expected_count = round(expected, 1), expected_share = round(expected / nrow(res), 3), row.names = NULL)
+```
+
+```{r}
+by_city <- aggregate(res[p], by = list(city = df$city), FUN = mean)
+by_city$n <- as.vector(table(df$city)[by_city$city])
+by_city[by_city$n >= 20, ]
+```
+
+## 6. What the package says when something is wrong
+Plain messages instead of long errors: a missing key, a key the service doesn't accept (HTTP 401), the daily limit (429), input it can't read (422), and the first minutes after a service restart (503, which the package waits out and retries). A misspelt argument such as `mname =` is refused before anything is sent.
+
+```{r}
+r <- tryCatch(strata("MARIA", "GARCIA", mname = "L"), error = function(e) conditionMessage(e))
+cat(r, "\n")
+```
+
+## 6. What to take from this
+- The service returns **probabilities**. Add them up (expected counts) when you describe a group; do not read a single person's top class as their race.
+- `iu`, the uncertainty index, is higher where the model is less sure, and `lookup_level` tells you how precise the address match was. Both belong in any analysis.
+- No accuracy figure appears here on purpose: with invented names there is nothing to measure against. Published benchmarks for STRATA are **coming**; until then treat results as estimates.
+- Not for decisions about individuals. STRATA outputs are subject to the free-tier terms (see `NOTICE`). Questions: terry@aequum.ai

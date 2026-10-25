@@ -1,53 +1,49 @@
 # aqEthnicity examples
 
-Runnable examples for the **aequum REST API**: race and ethnicity *probabilities* for population-level analysis, from a surname, a first name and an address. Everything here uses **made-up people and public landmark or business addresses**; there is no real personal data in this repository.
+Runnable examples for **aqEthnicity**, in **Python** and **R**: race and ethnicity *probabilities* for population-level analysis, from a surname, a first name and an address. Everything here uses **made-up people and public landmark or business addresses**; there is no real personal data in this repository.
+
+> **Pre-release.** The packages are not on PyPI or CRAN yet. The install lines below are marked accordingly and change at release.
+
+## Install
+
+| | Pre-release (today) | After release |
+|---|---|---|
+| **Python** | `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "aqethnicity[local,pandas]==0.1.0.dev1"` (TestPyPI) | `pip install "aqethnicity[local,pandas]"` |
+| **R** | `remotes::install_github("tleitch/aqEthnicity")` (GitHub; the repository is created at release time) | `install.packages("aqEthnicity")` |
+
+The packages know where the hosted service is: **you never type a URL**. (`AEQUUM_BASE_URL` overrides it, for testing only.)
+
+## The notebooks
 
 | Notebook | Where |
 |---|---|
-| `notebooks/quickstart_colab.ipynb` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tleitch/aqEthnicity-examples/blob/main/notebooks/quickstart_colab.ipynb) (reads your key from Colab Secrets) |
-| `notebooks/quickstart_jupyter.ipynb` | the same content for a local Jupyter (reads your key from an environment variable) |
+| `notebooks/quickstart_colab.ipynb` (Python) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tleitch/aqEthnicity-examples/blob/main/notebooks/quickstart_colab.ipynb) (key from Colab Secrets) |
+| `notebooks/quickstart_jupyter.ipynb` (Python) | the same content for a local Jupyter (key from an environment variable) |
+| `notebooks/quickstart_R_colab.ipynb` (R) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tleitch/aqEthnicity-examples/blob/main/notebooks/quickstart_R_colab.ipynb) (choose an **R runtime**; key from a hidden prompt, because Colab Secrets are Python-only) |
+| `R/quickstart.qmd` (R) | a Quarto document: `quarto render R/quickstart.qmd` (key from `AEQUUM_API_KEY` or a hidden prompt) |
 
-## What the API offers
+## What you get
 
-- **BISG and BIFSG: free.** Bayesian Improved (First name) Surname Geocoding from public Census tables: surname (and first name) plus a ZIP code, tract or block group. The routes are `pyethnicity`-compatible (same function names and output columns).
-- **aequum STRATA.** A name-plus-address model. It returns **five-class probabilities** (white, black, hispanic, asian, other), a per-record **uncertainty index** (`iu`) and the **lookup level** it used (`BG` block group, `TRACT`, `ZIP`, or `NONE` for name only). Free up to **10,000 records a day** with a registered key.
-- **Aggregate, population-level use only.** The outputs are statistical estimates, **not statements about any individual's race**, and must not be used for decisions about individuals. Every proxy, STRATA included, is least reliable for smaller groups; use the uncertainty index and treat results as estimates. Benchmarks are coming.
+- **STRATA** (hosted): five-class probabilities (white, black, hispanic, asian, other), a per-record **uncertainty index** (`iu`) and the **lookup level** it used, from a name and an address. Python `aq.strata(...)`; R `strata(...)` and the wru-style `predict_race_aq(df, ...)`, which returns your data frame with `pred.whi`, `pred.bla`, `pred.his`, `pred.asi`, `pred.oth` added.
+- **BISG and BIFSG**: Python runs them **on your machine** (the `local` extra, pyethnicity's tables; no key, nothing leaves your computer); in this first R release they are hosted.
+- **geocode**: for each address, the lookup level and a confidence (the geography itself is not returned).
+- **Aggregate, population-level use only.** The outputs are statistical estimates, **not statements about any individual's race**, and must not be used for decisions about individuals.
+
+Plain messages instead of long errors: a missing key, 401 (key not accepted), 429 (today's free limit), 422 (input it can't read, with your row numbers), and 503 (the service is starting up after a restart: the package waits and retries). A misspelt field such as `mname=` is refused before anything is sent (the middle name is `middle_name`).
 
 ## Get a key
 
-Until self-service registration is live, **email terry@aequum.ai** and ask for a free key. Keep it out of your code: the notebooks read it from the environment variable `AEQUUM_API_KEY` (Jupyter) or from **Colab Secrets** (Colab) and never print it.
+Until self-service registration is live, **email terry@aequum.ai** and ask for a free key. Keep it out of your code: set it with `aq.set_api_key()` / `aq_set_key()` (R asks with a hidden prompt) or the environment variable `AEQUUM_API_KEY`. It is never printed or logged.
 
-## Run the notebooks
-
-**Colab:** click the badge, add a secret named `AEQUUM_API_KEY` (key icon in the left sidebar, then switch *Notebook access* on), and run all cells.
+**Colab (Python):** click the badge, add a secret named `AEQUUM_API_KEY` (key icon in the left sidebar, then switch *Notebook access* on), and run all cells. **Colab (R):** choose an R runtime, run all cells, and paste the key into the hidden prompt.
 
 **Local Jupyter:**
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ -r requirements.txt   # pre-release
 export AEQUUM_API_KEY=...           # your key; not printed anywhere
 jupyter lab notebooks/quickstart_jupyter.ipynb
 ```
-`AEQUUM_BASE_URL` overrides the default `https://api.aequum.ai` (for testing only).
-
-## The API at a glance
-
-Base URL `https://api.aequum.ai`. Authentication: an `Authorization` header with your key as a bearer token (`Authorization: Bearer <your key>`). Up to 10,000 records per call, JSON in and out, **columnar**: `{"records": {"column": [values...]}, "options": {...}}`; every column has the same length and results come back in input order.
-
-| Route | What it does | Needs |
-|---|---|---|
-| `GET /v1/health` | liveness; `"ready": true` once the geography tables are loaded (no key needed) | |
-| `POST /v1/predict/bisg` (also `bisg6`, `bifsg`, `bifsg6`, `predict_race`, `predict_race_fl`, `predict_race_flg`) | BISG / BIFSG | `last_name` plus one of `zcta`, `tract`, `block_group` (`first_name` for BIFSG) |
-| `POST /v1/strata/auto` (or `bgt`, `tract`, `zcta`, `name`) | STRATA: probabilities, uncertainty index, lookup level; `auto` picks the finest geography each address resolves to | `first_name`, `last_name`, `address`, `city`, `state`, `zip5` |
-| `POST /v1/geocode` | address to lookup level and confidence (the geography itself is not returned) | `address`, `city`, `state`, `zip5` |
-
-Reading a STRATA answer: `columns` holds your passthrough columns (add `options.passthrough`), `p_white p_black p_hispanic p_asian p_other` (they sum to 1), `dominant_race`, `iu` (higher means less certain), `lookup_level` and `lookup_conf`.
-
-Things to know:
-- Use **`first_name` / `last_name`**. Other spellings are not rejected: you get a prediction made without the name.
-- A forced tier (`bgt`, `tract`) refuses rows that do not resolve that finely (HTTP 422 with the row numbers); use `auto`.
-- After a service restart the address routes can answer **503 for about five minutes** while the tables load; `GET /v1/health` shows `"ready": true` when they are.
-- Errors are JSON, `{"error": {"code", "message"}}`: `missing_api_key` and `invalid_api_key` (401), `bad_request` (400), and 413 above 10,000 records.
 
 ## Privacy
 

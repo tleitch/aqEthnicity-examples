@@ -4,7 +4,8 @@ Patterns: the key prefix used by the service, a bearer token (the word Bearer fo
 shows the header only with a placeholder), and any 40-character hex string. usage: scan_secrets.py [--no-history]"""
 import re, subprocess, sys, json, os
 ROOT = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
-PAT = [("key prefix", re.compile("aq" + "_[A-Za-z0-9]")), ("bearer token", re.compile(r"Bearer\s+[A-Za-z0-9_\-\.=]{16,}")),
+# Key shape: aq_<kind>_<16+ alphanumerics> (aq_live_..., aq_test_...). A bare "aq_" prefix is NOT enough: the R package has functions such as aq_set_key().
+PAT = [("key prefix", re.compile("aq" + "_[a-z]+_[A-Za-z0-9]{16,}")), ("bearer token", re.compile(r"Bearer\s+[A-Za-z0-9_\-\.=]{16,}")),
        ("40-hex", re.compile(r"(?<![0-9A-Fa-f])[0-9A-Fa-f]{40}(?![0-9A-Fa-f])"))]
 bad = []
 def scan(text, where):
