@@ -16,9 +16,7 @@ PY_AGG_MD = "## 5. An aggregate example: describe a group with expected counts, 
 PY_AGG = 'summary = pd.DataFrame({\n    "expected_count": res[p].sum().round(1).values,\n    "argmax_count": res.dominant_race.value_counts().reindex(classes).fillna(0).astype(int).values,\n}, index=classes)\nsummary["expected_share"] = (summary.expected_count / len(res)).round(3)\nprint(summary)\n\nres["city"] = df.city.values                       # the answers are in input order, so we can add the input city back\nby_city = res.groupby("city")[p].mean().round(3)\nby_city["n"] = res.groupby("city").size()\nprint("\\nmean probabilities by city (groups with at least 20 rows only):")\nprint(by_city[by_city.n >= 20])'
 PY_END = "## 6. What to take from this\n- The API returns **probabilities**. Add them up (expected counts) when you describe a group; do not read a single person's top class as their race.\n- `iu`, the uncertainty index, is higher where the model is less sure, and `lookup_level` tells you how precise the address match was. Both belong in any analysis.\n- No accuracy figure appears here on purpose: with invented names there is nothing to measure against. Published benchmarks for STRATA are **coming**; until then treat results as estimates.\n- Not for decisions about individuals. STRATA outputs are subject to the free-tier terms (see `NOTICE`). Questions: terry@aequum.ai"
 
-PY_INSTALL = """# PRE-RELEASE: aqEthnicity is not on PyPI yet, so this installs the test build from TestPyPI.
-# After the PyPI release this cell becomes just:   %pip install -q "aqethnicity[local,pandas]"
-%pip install -q --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "aqethnicity[local,pandas]==0.1.0.dev1\""""
+PY_INSTALL = """%pip install -q "aqethnicity[local,pandas]\""""
 
 PY_SETUP = """import random
 import pandas as pd
@@ -94,10 +92,8 @@ R_INTRO = """# aqEthnicity quickstart (R): STRATA, BISG and BIFSG on made-up dat
 
 Outputs are **estimated probabilities, not a statement about any individual's race**; use them for aggregate, population-level analysis only. In this first R release every call is hosted and needs a key (see the README).""" % REPO
 
-R_INSTALL = """# PRE-RELEASE: aqEthnicity is not on CRAN yet. This installs the development version from GitHub
-# (the repository is created when the package is released; until then this cell cannot succeed).
-install.packages(c("remotes", "askpass"), quiet = TRUE)
-remotes::install_github("tleitch/aqEthnicity", quiet = TRUE)"""
+R_INSTALL = """install.packages(c("remotes", "askpass"), quiet = TRUE)
+remotes::install_github("tleitch/aqEthnicity", subdir = "r", quiet = TRUE)"""
 
 R_SETUP = """library(aqEthnicity)"""
 
@@ -180,9 +176,9 @@ def write_nb(name, cl, kernel, lang, extra_meta=None):
 
 def write_qmd():
     out = ["---", 'title: "aqEthnicity quickstart (R): STRATA, BISG and BIFSG on made-up data"', "format: html", "execute:", "  eval: true", "  warning: false", "---", ""]
-    out.append("*Pre-release.* Needs the aqEthnicity R package (not on CRAN yet) and an API key in the `AEQUUM_API_KEY` environment variable, or a hidden prompt when run interactively. **Every person here is invented** and every address is a public landmark or business address, so no accuracy figure is computed. Outputs are estimates for groups, not statements about any individual's race.\n")
+    out.append("Needs the aqEthnicity R package (install it from GitHub, below) and an API key in the `AEQUUM_API_KEY` environment variable, or a hidden prompt when run interactively. **Every person here is invented** and every address is a public landmark or business address, so no accuracy figure is computed. Outputs are estimates for groups, not statements about any individual's race.\n")
     out.append("## Install and key\n")
-    out.append("```{r}\n#| eval: false\n# PRE-RELEASE: install the development version from GitHub (the repository is created at release time)\ninstall.packages(c(\"remotes\", \"askpass\"))\nremotes::install_github(\"tleitch/aqEthnicity\")\n```\n")
+    out.append("```{r}\n#| eval: false\ninstall.packages(c(\"remotes\", \"askpass\"))\nremotes::install_github(\"tleitch/aqEthnicity\", subdir = \"r\")\n```\n")
     out.append("```{r}\nlibrary(aqEthnicity)\nif (!nzchar(Sys.getenv(\"AEQUUM_API_KEY\")) && interactive()) aq_set_key()   # hidden prompt; never printed or logged\nstr(aq_health())\n```\n")
     out.append(PY_DATA_MD + "\n")
     out.append("```{r}\n" + R_DATA + "\n```\n")

@@ -2,14 +2,12 @@
 
 Runnable examples for **aqEthnicity**, in **Python** and **R**: race and ethnicity *probabilities* for population-level analysis, from a surname, a first name and an address. Everything here uses **made-up people and public landmark or business addresses**; there is no real personal data in this repository.
 
-> **Pre-release.** The packages are not on PyPI or CRAN yet. The install lines below are marked accordingly and change at release.
-
 ## Install
 
-| | Pre-release (today) | After release |
-|---|---|---|
-| **Python** | `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "aqethnicity[local,pandas]==0.1.0.dev1"` (TestPyPI) | `pip install "aqethnicity[local,pandas]"` |
-| **R** | `remotes::install_github("tleitch/aqEthnicity")` (GitHub; the repository is created at release time) | `install.packages("aqEthnicity")` |
+| | Install |
+|---|---|
+| **Python** | `pip install "aqethnicity[local,pandas]"` (PyPI) |
+| **R** | `remotes::install_github("tleitch/aqEthnicity", subdir = "r")` (GitHub) |
 
 The packages know where the hosted service is: **you never type a URL**. (`AEQUUM_BASE_URL` overrides it, for testing only.)
 
@@ -40,7 +38,7 @@ Until self-service registration is live, **email terry@aequum.ai** and ask for a
 **Local Jupyter:**
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ -r requirements.txt   # pre-release
+pip install -r requirements.txt
 export AEQUUM_API_KEY=...           # your key; not printed anywhere
 jupyter lab notebooks/quickstart_jupyter.ipynb
 ```

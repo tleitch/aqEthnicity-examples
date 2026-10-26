@@ -6,15 +6,14 @@ execute:
   warning: false
 ---
 
-*Pre-release.* Needs the aqEthnicity R package (not on CRAN yet) and an API key in the `AEQUUM_API_KEY` environment variable, or a hidden prompt when run interactively. **Every person here is invented** and every address is a public landmark or business address, so no accuracy figure is computed. Outputs are estimates for groups, not statements about any individual's race.
+Needs the aqEthnicity R package (install it from GitHub, below) and an API key in the `AEQUUM_API_KEY` environment variable, or a hidden prompt when run interactively. **Every person here is invented** and every address is a public landmark or business address, so no accuracy figure is computed. Outputs are estimates for groups, not statements about any individual's race.
 
 ## Install and key
 
 ```{r}
 #| eval: false
-# PRE-RELEASE: install the development version from GitHub (the repository is created at release time)
 install.packages(c("remotes", "askpass"))
-remotes::install_github("tleitch/aqEthnicity")
+remotes::install_github("tleitch/aqEthnicity", subdir = "r")
 ```
 
 ```{r}
